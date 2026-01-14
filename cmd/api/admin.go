@@ -83,6 +83,11 @@ func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	if !app.isOrgAdminOrSuper(user, org) {
+		app.unauthorizedResponse(w, r, errors.New("unauthorized to add users to this organization"))
+		return
+	}
+
 	newUser := &models.User{
 		ID:             uuid.New(),
 		Name:           payload.Email,
@@ -429,6 +434,11 @@ func (app *application) GetOrganizationHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	if !app.isOrgAdminOrSuper(user, org) {
+		app.unauthorizedResponse(w, r, errors.New("unauthorized to access this organization"))
+		return
+	}
+
 	app.jsonResponse(w, http.StatusOK, org, "organization")
 
 }
@@ -456,6 +466,17 @@ func (app *application) DeleteOrganizationHandler(w http.ResponseWriter, r *http
 	if err != nil {
 		app.internalServerError(w, r, err)
 		app.logger.Error("unable to parse id in delete org")
+		return
+	}
+
+	org, err := app.store.Organization.GetOrganization(ctx, parsedId)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if !app.isOrgAdminOrSuper(user, org) {
+		app.unauthorizedResponse(w, r, errors.New("unauthorized to delete this organization"))
 		return
 	}
 

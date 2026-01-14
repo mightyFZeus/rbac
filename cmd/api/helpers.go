@@ -18,6 +18,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/mightyfzeus/rbac/internal/env"
+	"github.com/mightyfzeus/rbac/internal/models"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -144,4 +145,11 @@ func HashPassword(password string) (string, error) {
 		return "", err
 	}
 	return string(hashedPassword), nil
+}
+
+func (app *application) isOrgAdminOrSuper(user UserClaims, org *models.Organization) bool {
+	if user.Role == RoleSuperAdmin {
+		return true
+	}
+	return org.AdminID == uuid.MustParse(user.UserID)
 }
